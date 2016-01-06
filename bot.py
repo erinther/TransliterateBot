@@ -25,9 +25,9 @@ nahal_dict = {"@":"at", "&":"and", "A":"ey", "B":"bi", "C":"si", "D":"di", "E":"
 
 logging.basicConfig(format='%(asctime)s:%(funcName)s:%(message)s', filename='bot.log', level=logging.CRITICAL)
 
-bot = telebot.TeleBot("TOKEN")
+bot = telebot.TeleBot("YOUR_API_KEY")
 
-client = MongoClient('mongodb://user:pass@host:port/')
+client = MongoClient('mongodb://user:password@ip:27017/')
 db = client.bot
 
 
@@ -167,7 +167,6 @@ def filter_text(text):
 def parsi_text(text):
     return text
 
-
 @bot.message_handler(content_types=['text'])
 def transliterate(message):
     text = message.text
@@ -205,5 +204,35 @@ def transliterate(message):
 def drop(message):
     bot.reply_to(message, "Send me a text message")
 
+@bot.inline_handler(lambda query: True)
+def query_text(inline_query):
+    try:
+        text = inline_query.query
+        user_id = inline_query.from_user.id
+        logging.critical(str(user_id)+" : "+text)
+        text = text.split()
+        user_dictionary = db["user_dicts"].find_one({"user_id": user_id})
+        if(user_dictionary is not None):
+            text = use_dict(text,user_dictionary["words"])
+        pref = db["user_prefs"].find_one({'user_id': user_id})
+        if(pref is None):
+            db["user_prefs"].update({'user_id': inline_query.from_user.id}, {'$setOnInsert': {'user_id': inline_query.from_user.id, "denahal": False, "filter": True, "parsi": False}}, upsert = True)
+            pref = db["user_prefs"].find_one({'user_id': user_id})
+        if(pref["denahal"]):
+            text = denahalize(text)
+        if(pref["filter"]):
+            text = filter_text(text)
+        if(pref["parsi"]):
+            text = parsi_text(text)
+        text = global_replaces(text)
+        shcommand = ['php', './behnevis.php']
+        shcommand.extend(text)
+        p = Popen(shcommand, stdout=PIPE, stderr=PIPE)
+        text, err = p.communicate()
+        text = text.decode("utf-8")
+        r = types.InlineQueryResultArticle('1', text, text)
+        bot.answer_inline_query(inline_query.id, [r])
+    except Exception as e:
+        print(e)
 
 bot.polling()
