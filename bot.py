@@ -7,7 +7,8 @@ from subprocess import (PIPE, Popen)
 about_txt = """\
 Hi there, I am TransliterateBot.
 I am an unofficial bot which uses behnevis to transliterate finglish to Farsi.
-Good news is, I am released under GPLv3 at github.com/Separius/TransliterateBot
+Good news is, I am released under GPLv3 at github.com/Separius/TransliterateBot.
+oh and I support inline !
 """
 
 help_txt = """\
@@ -25,9 +26,9 @@ nahal_dict = {"@":"at", "&":"and", "A":"ey", "B":"bi", "C":"si", "D":"di", "E":"
 
 logging.basicConfig(format='%(asctime)s:%(funcName)s:%(message)s', filename='bot.log', level=logging.CRITICAL)
 
-bot = telebot.TeleBot("YOUR_API_KEY")
+bot = telebot.TeleBot("<your bot token>")
 
-client = MongoClient('mongodb://user:password@ip:27017/')
+client = MongoClient('mongodb://admin:password@ip:27017/')
 db = client.bot
 
 
@@ -38,7 +39,8 @@ def is_user(chat):
 def denahalize(text):
     for i in range(len(text)):
         for key, value in nahal_dict.items():
-            text = text.replace(key, value)
+            #text = text.replace(key, value) #TODO
+            break
     return text
 
 
@@ -208,6 +210,7 @@ def drop(message):
 def query_text(inline_query):
     try:
         text = inline_query.query
+        print("input is "+text)
         user_id = inline_query.from_user.id
         logging.critical(str(user_id)+" : "+text)
         text = text.split()
@@ -230,6 +233,7 @@ def query_text(inline_query):
         p = Popen(shcommand, stdout=PIPE, stderr=PIPE)
         text, err = p.communicate()
         text = text.decode("utf-8")
+        print("sending: "+text)
         r = types.InlineQueryResultArticle('1', text, text)
         bot.answer_inline_query(inline_query.id, [r])
     except Exception as e:
