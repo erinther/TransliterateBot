@@ -94,7 +94,6 @@ class ConvertFinglishToFarsi
 			"khoobe" => "خوبه",
 			"sameni" => "سامنی",
 			":D" => ":دی",
-			"rana" => "رعنا جانِ سپهر",
 			"biyad" => "بیاد",
 			"e" => urldecode('%D9%90') //define e as a separate Kasre (to be attached later with the word before)
 		);
